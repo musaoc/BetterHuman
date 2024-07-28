@@ -1,38 +1,77 @@
+/* App.css */
+
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.sidebar {
+  width: 200px;
+  background-color: #f4f4f4;
+  padding: 15px;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.content {
+  margin-left: 220px;
+  padding: 20px;
+  width: calc(100% - 220px);
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  margin: 10px 0;
+}
+
+li a {
+  text-decoration: none;
+  color: #333;
+}
+
+.typing-speed-tester,
+.todo-list {
+  padding: 20px;
+}
+
+.typing-speed-tester .sample-text,
+.todo-list h1 {
+  font-weight: bold;
+}
+
+.typing-speed-tester textarea,
+.todo-list input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.typing-speed-tester .result,
+.todo-list ul {
+  margin-top: 20px;
+}
+
+.typing-speed-tester .result p,
+.todo-list li {
+  font-size: 18px;
+  margin: 10px 0;
+}
+
+button {
+  padding: 10px 20px;
+  margin-left: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.todo-list button,
+.typing-speed-tester button {
+  margin-left: 20px;
+  padding: 5px 10px;
+  font-size: 14px;
 }

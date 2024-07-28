@@ -1,0 +1,59 @@
+/* SpeedReading.css */
+
+.speed-reading {
+    padding: 20px;
+  }
+  
+  .speed-reading h1 {
+    font-size: 24px;
+  }
+  
+  .speed-reading label {
+    display: block;
+    margin: 10px 0 5px;
+  }
+  
+  .speed-reading input,
+  .speed-reading textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    font-size: 16px;
+  }
+  
+  .reading-area {
+    margin: 20px 0;
+    font-size: 48px; /* Increase font size */
+    height: 100px; /* Increase height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #ccc;
+    padding: 10px;
+    background-color: #f9f9f9;
+  }
+  
+  .reading-area p {
+    margin: 0;
+  }
+  
+  .progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #f4f4f4;
+    border: 1px solid #ccc;
+    margin-bottom: 20px;
+  }
+  
+  .progress {
+    height: 100%;
+    background-color: #4caf50;
+    transition: width 0.1s ease-in-out; /* Smooth transition */
+  }
+  
+  .speed-reading button {
+    margin-right: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+  

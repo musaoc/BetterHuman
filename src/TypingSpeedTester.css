@@ -1,0 +1,23 @@
+.typing-speed-tester {
+    margin-left: 220px;
+    padding: 20px;
+  }
+  
+  .typing-speed-tester .sample-text {
+    font-weight: bold;
+  }
+  
+  .typing-speed-tester textarea {
+    width: 100%;
+    height: 100px;
+    margin-top: 20px;
+    padding: 10px;
+    font-size: 16px;
+  }
+  
+  .typing-speed-tester .result {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+  }
+  
