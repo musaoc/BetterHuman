@@ -2,76 +2,11 @@
 
 .App {
   display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-.sidebar {
-  width: 200px;
-  background-color: #f4f4f4;
-  padding: 15px;
-  position: fixed;
-  height: 100vh;
-  overflow-y: auto;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-}
-
-.content {
-  margin-left: 220px;
-  padding: 20px;
-  width: calc(100% - 220px);
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  margin: 10px 0;
-}
-
-li a {
-  text-decoration: none;
-  color: #333;
-}
-
-.typing-speed-tester,
-.todo-list {
-  padding: 20px;
-}
-
-.typing-speed-tester .sample-text,
-.todo-list h1 {
-  font-weight: bold;
-}
-
-.typing-speed-tester textarea,
-.todo-list input {
+.main-content {
+  padding: 60px 20px 20px; /* Adjust padding to account for the top bar */
   width: 100%;
-  padding: 10px;
-  font-size: 16px;
-}
-
-.typing-speed-tester .result,
-.todo-list ul {
-  margin-top: 20px;
-}
-
-.typing-speed-tester .result p,
-.todo-list li {
-  font-size: 18px;
-  margin: 10px 0;
-}
-
-button {
-  padding: 10px 20px;
-  margin-left: 10px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.todo-list button,
-.typing-speed-tester button {
-  margin-left: 20px;
-  padding: 5px 10px;
-  font-size: 14px;
 }
