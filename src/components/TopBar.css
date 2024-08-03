@@ -4,7 +4,7 @@
   width: 100%;
   background-color: #23272a;
   color: white;
-  padding-right: 10px;
+  padding-right: 1rem;
   position: fixed;
   top: 0;
   left: 0;
@@ -51,6 +51,13 @@
   margin-right: 3rem; /* Optional: add margin-right to create space between nav links and buttons */
 }
 
+.top-bar .nav-links a {
+  color: #ffffff; /* Ensures links are white */
+  font-size:1.275rem;
+  font-weight: 500;
+  line-height: 1.5rem;
+  text-decoration: none; /* Removes underline from links */
+}
 .top-bar .button-group {
   display: flex;
   gap: 0.5rem;
