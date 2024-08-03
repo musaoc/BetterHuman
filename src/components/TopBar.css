@@ -2,34 +2,96 @@
 
 .top-bar {
   width: 100%;
-  background-color: #2c3e50;
+  background-color: #23272a;
   color: white;
-  padding: 10px;
+  padding-right: 1rem;
   position: fixed;
   top: 0;
   left: 0;
   z-index: 1000;
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #2c2f33;
+  font-family: 'Plus Jakarta Sans', 'Noto Sans', sans-serif;
 }
 
-.top-bar ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.top-bar .logo-container {
   display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #ffffff;
 }
 
-.top-bar ul li {
-  margin: 0 15px;
+.top-bar .logo {
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
-.top-bar ul li a {
-  text-decoration: none;
-  color: #ecf0f1;
-  font-size: 18px;
+.top-bar .title {
+  color: #ffffff;
+  font-size: 1.125rem;
+  font-weight: bold;
+  line-height: 1.25rem;
+  letter-spacing: -0.015em;
 }
 
-.top-bar ul li a:hover {
-  color: #1abc9c;
+
+
+.top-bar .nav-links {
+  color: #ffffff;
+  
+  font-size: 1.275rem;
+  font-weight: 500;
+  line-height: 2.5rem;
+  display: flex;
+ 
+  gap: 3rem;  /* Adjusted gap between links */
+  margin-left: auto;
+  margin-right: 3rem; /* Optional: add margin-right to create space between nav links and buttons */
+}
+
+.top-bar .nav-links a {
+  color: #ffffff; /* Ensures links are white */
+  font-size:1.275rem;
+  font-weight: 500;
+  line-height: 1.5rem;
+  text-decoration: none; /* Removes underline from links */
+}
+.top-bar .button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.top-bar .button-primary {
+  background-color: #108918;
+  color: rgb(255, 255, 255);
+  height: 2.5rem;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: bold;
+  line-height: 1.5rem;
+}
+
+.top-bar .button-secondary {
+  background-color: #2c2f33;
+  color: white;
+  border: 1px solid #5865f2;
+  height: 2.5rem;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+}
+
+.top-bar .avatar {
+  background-size: cover;
+  border-radius: 9999px;
+  width: 2.5rem;
+  height: 2.5rem;
 }
