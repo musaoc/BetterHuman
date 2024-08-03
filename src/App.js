@@ -6,7 +6,7 @@ import './App.css';
 import TodoList from './components/TodoList';
 import SpeedTest from './components/SpeedTest';
 import SpeedReadingPlus from './components/SpeedReading';
-
+import Quests from './components/Quests';
 
 function App() {
   const [activePanel, setActivePanel] = useState('todo');
@@ -22,6 +22,7 @@ function App() {
         {activePanel === 'todo' && <TodoList />}
         {activePanel === 'typing' && <SpeedTest />}
         {activePanel === 'speedreading' && <SpeedReadingPlus />}
+        {activePanel === 'Quests' && <Quests />}
     
       </div>
     </div>
