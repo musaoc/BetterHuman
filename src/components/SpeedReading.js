@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
-import { Container, TextField, Button, Typography, Box, Slider, MenuItem, Select, LinearProgress } from '@mui/material';
+import { Container, TextField, Button, Typography, Box, Slider, MenuItem, Select, LinearProgress, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import './SpeedReading.css';
 
 function SpeedReadingPlus() {
@@ -12,12 +12,14 @@ function SpeedReadingPlus() {
   const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  // New state variables for text formatting and features
-  const [textSize, setTextSize] = useState(70);
+  // State variables for text formatting and features
+  const [textSize, setTextSize] = useState(70); // Changed from 20 to 70 as per your preference
   const [fontFamily, setFontFamily] = useState('Arial');
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
-  const [panelColor, setPanelColor] = useState('#ffffff');
+  const [panelColor, setPanelColor] = useState('#ffffff'); // Changed from '#f0f0f0' to '#ffffff' as per your preference
+  const [fontColor, setFontColor] = useState('#000000'); // Default font color
   const [numWords, setNumWords] = useState(1);
+  const [fullscreen, setFullscreen] = useState(false);
 
   const handleStart = () => {
     setIsReading(true);
@@ -64,7 +66,7 @@ function SpeedReadingPlus() {
   const handleCustomTextSubmit = (e) => {
     e.preventDefault();
     setText(customText);
-    setCustomText('');
+    setCustomText('Are you strong?');
   };
 
   const handleFileUpload = async (e) => {
@@ -103,6 +105,7 @@ function SpeedReadingPlus() {
       fontFamily,
       backgroundColor,
       panelColor,
+      fontColor,
       numWords
     };
     const csvContent = `data:text/csv;charset=utf-8,${Object.keys(progressData).join(',')}\n${Object.values(progressData).join(',')}`;
@@ -128,11 +131,16 @@ function SpeedReadingPlus() {
         setFontFamily(csvData[4]);
         setBackgroundColor(csvData[5]);
         setPanelColor(csvData[6]);
-        setNumWords(Number(csvData[7]));
+        setFontColor(csvData[7]);
+        setNumWords(Number(csvData[8]));
         setProgress((Number(csvData[1]) / csvData[0].split(' ').length) * 100);
       };
       reader.readAsText(file);
     }
+  };
+
+  const handleFullscreenToggle = () => {
+    setFullscreen(!fullscreen);
   };
 
   return (
@@ -176,6 +184,14 @@ function SpeedReadingPlus() {
         </Select>
       </Box>
       <Box marginTop={2}>
+        <Typography>Font Color</Typography>
+        <input
+          type="color"
+          value={fontColor}
+          onChange={(e) => setFontColor(e.target.value)}
+        />
+      </Box>
+      <Box marginTop={2}>
         <Typography>Background Color</Typography>
         <input
           type="color"
@@ -206,7 +222,7 @@ function SpeedReadingPlus() {
       <Box textAlign="center" marginTop={2} style={{ backgroundColor: panelColor, padding: 20 }}>
         <Typography
           variant="h5"
-          style={{ fontSize: textSize, fontFamily: fontFamily, backgroundColor: backgroundColor }}
+          style={{ fontSize: textSize, fontFamily: fontFamily, color: fontColor, backgroundColor: backgroundColor }}
         >
           {text.split(' ').slice(currentIndex, currentIndex + numWords).join(' ')}
         </Typography>
@@ -235,13 +251,33 @@ function SpeedReadingPlus() {
         <Box marginTop={2}>
           <LinearProgress variant="determinate" value={progress} />
         </Box>
-        <Box display="flex" justifyContent="center" marginTop={2}>
-          <Button variant="contained" color="primary" onClick={handleSaveProgress} style={{ marginRight: 8 }}>Save for Later</Button>
-          <input type="file" onChange={handleLoadProgress} accept=".csv" style={{ display: 'none' }} id="load-progress" />
-          <label htmlFor="load-progress">
-            <Button variant="contained" color="secondary" component="span">Load</Button>
-          </label>
+        <Box display="flex" justifyContent="flex-end" marginTop={2}>
+          <Button variant="outlined" onClick={handleFullscreenToggle}>Toggle Fullscreen Mode</Button>
         </Box>
+      </Box>
+      <Dialog open={fullscreen} onClose={handleFullscreenToggle} fullScreen style={{ backgroundColor: backgroundColor }}>
+  <DialogTitle>Full Screen Mode</DialogTitle>
+  <DialogContent style={{ backgroundColor: backgroundColor, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+    <Typography
+      variant="h4"
+      style={{ fontSize: textSize, fontFamily: fontFamily, color: fontColor, textAlign: 'center' }}
+    >
+      {text.split(' ').slice(currentIndex, currentIndex + numWords).join(' ')}
+    </Typography>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={handleFullscreenToggle} color="secondary">
+      Close
+    </Button>
+  </DialogActions>
+</Dialog>
+
+      <Box display="flex" justifyContent="center" marginTop={2}>
+        <Button variant="contained" color="primary" onClick={handleSaveProgress} style={{ marginRight: 8 }}>Save for Later</Button>
+        <input type="file" onChange={handleLoadProgress} accept=".csv" style={{ display: 'none' }} id="load-progress" />
+        <label htmlFor="load-progress">
+          <Button variant="contained" color="secondary" component="span">Load</Button>
+        </label>
       </Box>
     </Container>
   );
