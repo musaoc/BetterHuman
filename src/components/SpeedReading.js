@@ -11,15 +11,16 @@ function SpeedReadingPlus() {
   const [isReading, setIsReading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(0);
-
-  // State variables for text formatting and features
-  const [textSize, setTextSize] = useState(70); // Changed from 20 to 70 as per your preference
+  const [textSize, setTextSize] = useState(70);
   const [fontFamily, setFontFamily] = useState('Arial');
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
-  const [panelColor, setPanelColor] = useState('#ffffff'); // Changed from '#f0f0f0' to '#ffffff' as per your preference
-  const [fontColor, setFontColor] = useState('#000000'); // Default font color
+  const [panelColor, setPanelColor] = useState('#ffffff');
+  const [fontColor, setFontColor] = useState('#000000');
   const [numWords, setNumWords] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
+  const [displayMode, setDisplayMode] = useState('words'); // 'words' or 'sentences'
+  const [startPage, setStartPage] = useState(1);
+  const [endPage, setEndPage] = useState(1);
 
   const handleStart = () => {
     setIsReading(true);
@@ -48,9 +49,9 @@ function SpeedReadingPlus() {
     if (isReading && !isPaused) {
       interval = setInterval(() => {
         setCurrentIndex((prevIndex) => {
-          const words = text.split(' ');
-          if (prevIndex < words.length - numWords) {
-            setProgress(((prevIndex + numWords) / words.length) * 100);
+          const wordsOrSentences = displayMode === 'words' ? text.split(' ') : text.match(/[^.!?]+[.!?]+/g) || [];
+          if (prevIndex < wordsOrSentences.length - numWords) {
+            setProgress(((prevIndex + numWords) / wordsOrSentences.length) * 100);
             return prevIndex + numWords;
           } else {
             clearInterval(interval);
@@ -61,7 +62,7 @@ function SpeedReadingPlus() {
       }, 60000 / readingSpeed);
     }
     return () => clearInterval(interval);
-  }, [isReading, isPaused, text, readingSpeed, numWords]);
+  }, [isReading, isPaused, text, readingSpeed, numWords, displayMode]);
 
   const handleCustomTextSubmit = (e) => {
     e.preventDefault();
@@ -77,11 +78,11 @@ function SpeedReadingPlus() {
         reader.onload = async (e) => {
           const buffer = e.target.result;
           const pdfDoc = await PDFDocument.load(buffer);
-          const pages = pdfDoc.getPages();
           let textContent = '';
-          for (const page of pages) {
-            const { textContent: pageTextContent } = await page.getTextContent();
-            textContent += pageTextContent.items.map(item => item.str).join(' ') + ' ';
+          for (let i = startPage - 1; i < endPage; i++) {
+            const page = pdfDoc.getPages()[i];
+            const pageText = await page.getTextContent();
+            textContent += pageText.items.map(item => item.str).join(' ') + ' ';
           }
           setText(textContent);
         };
@@ -141,6 +142,23 @@ function SpeedReadingPlus() {
 
   const handleFullscreenToggle = () => {
     setFullscreen(!fullscreen);
+  };
+
+  const toggleDisplayMode = () => {
+    setDisplayMode(displayMode === 'words' ? 'sentences' : 'words');
+    setNumWords(1); // Reset slider value when switching modes
+  };
+
+  const handleSliderChange = (e, newValue) => {
+    setNumWords(newValue);
+  };
+
+  const handleStartPageChange = (e) => {
+    setStartPage(parseInt(e.target.value));
+  };
+
+  const handleEndPageChange = (e) => {
+    setEndPage(parseInt(e.target.value));
   };
 
   return (
@@ -208,10 +226,15 @@ function SpeedReadingPlus() {
         />
       </Box>
       <Box marginTop={2}>
-        <Typography>Number of Words</Typography>
+        <Button variant="contained" color="primary" onClick={toggleDisplayMode}>
+          Switch to {displayMode === 'words' ? 'Sentences' : 'Words'}
+        </Button>
+      </Box>
+      <Box marginTop={2}>
+        <Typography>Number of {displayMode === 'words' ? 'Words' : 'Sentences'}</Typography>
         <Slider
           value={numWords}
-          onChange={(e, newValue) => setNumWords(newValue)}
+          onChange={handleSliderChange}
           aria-labelledby="num-words-slider"
           min={1}
           max={10}
@@ -224,7 +247,9 @@ function SpeedReadingPlus() {
           variant="h5"
           style={{ fontSize: textSize, fontFamily: fontFamily, color: fontColor, backgroundColor: backgroundColor }}
         >
-          {text.split(' ').slice(currentIndex, currentIndex + numWords).join(' ')}
+          {displayMode === 'words'
+            ? text.split(' ').slice(currentIndex, currentIndex + numWords).join(' ')
+            : (text.match(/[^.!?]+[.!?]+/g) || []).slice(currentIndex, currentIndex + numWords).join(' ')}
         </Typography>
         <Box display="flex" justifyContent="center" marginTop={2}>
           <Button variant="contained" color="secondary" onClick={handleStart} style={{ marginRight: 8 }}>Start</Button>
@@ -256,21 +281,23 @@ function SpeedReadingPlus() {
         </Box>
       </Box>
       <Dialog open={fullscreen} onClose={handleFullscreenToggle} fullScreen style={{ backgroundColor: backgroundColor }}>
-  <DialogTitle>Full Screen Mode</DialogTitle>
-  <DialogContent style={{ backgroundColor: backgroundColor, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-    <Typography
-      variant="h4"
-      style={{ fontSize: textSize, fontFamily: fontFamily, color: fontColor, textAlign: 'center' }}
-    >
-      {text.split(' ').slice(currentIndex, currentIndex + numWords).join(' ')}
-    </Typography>
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={handleFullscreenToggle} color="secondary">
-      Close
-    </Button>
-  </DialogActions>
-</Dialog>
+        <DialogTitle>Full Screen Mode</DialogTitle>
+        <DialogContent style={{ backgroundColor: backgroundColor, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Typography
+            variant="h4"
+            style={{ fontSize: textSize, fontFamily: fontFamily, color: fontColor, textAlign: 'center' }}
+          >
+            {displayMode === 'words'
+              ? text.split(' ').slice(currentIndex, currentIndex + numWords).join(' ')
+              : (text.match(/[^.!?]+[.!?]+/g) || []).slice(currentIndex, currentIndex + numWords).join(' ')}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleFullscreenToggle} color="secondary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Box display="flex" justifyContent="center" marginTop={2}>
         <Button variant="contained" color="primary" onClick={handleSaveProgress} style={{ marginRight: 8 }}>Save for Later</Button>
@@ -278,6 +305,22 @@ function SpeedReadingPlus() {
         <label htmlFor="load-progress">
           <Button variant="contained" color="secondary" component="span">Load</Button>
         </label>
+      </Box>
+      <Box marginTop={2}>
+        <TextField
+          label="Start Page"
+          variant="outlined"
+          type="number"
+          value={startPage}
+          onChange={handleStartPageChange}
+        />
+        <TextField
+          label="End Page"
+          variant="outlined"
+          type="number"
+          value={endPage}
+          onChange={handleEndPageChange}
+        />
       </Box>
     </Container>
   );
