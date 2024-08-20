@@ -25,3 +25,5 @@ yarn-error.log*
 *.ipynb
 /data
 myApp2.exe
+/my-app
+/my-app

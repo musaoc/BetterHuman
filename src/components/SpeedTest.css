@@ -1,23 +1,75 @@
-.typing-speed-tester {
-    margin-left: 220px;
-    padding: 20px;
-  }
-  
-  .typing-speed-tester .sample-text {
-    font-weight: bold;
-  }
-  
-  .typing-speed-tester textarea {
-    width: 100%;
-    height: 100px;
-    margin-top: 20px;
-    padding: 10px;
-    font-size: 16px;
-  }
-  
-  .typing-speed-tester .result {
-    margin-top: 20px;
-    font-size: 18px;
-    font-weight: bold;
-  }
-  
+.text-display span {
+  font-size: 18px;
+}
+
+.text-display .correct {
+  color: green;
+}
+
+.text-display .incorrect {
+  color: red;
+  text-decoration: underline;
+}
+
+.text-display .current {
+  background-color: #ffff00;
+}
+
+.keyboard {
+  margin-top: 20px;
+}
+
+.keyboard-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 5px;
+}
+
+.key {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ccc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 2px;
+}
+
+.key.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.mode-selector, .difficulty-selector, .time-selector {
+  margin-bottom: 20px;
+}
+
+.mode-selector button, .difficulty-selector button, .time-selector button {
+  margin: 0 10px;
+}
+
+.mode-selector button.active, .difficulty-selector button.active {
+  background-color: #45a049;
+}
+
+.result {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 20px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background-color: #4CAF50;
+  transition: width 0.5s ease-in-out;
+}
