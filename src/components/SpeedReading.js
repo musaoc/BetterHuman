@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PDFDocument } from 'pdf-lib';
+import * as pdfjsLib from 'pdfjs-dist/webpack';
 import { Container, TextField, Button, Typography, Box, Slider, MenuItem, Select, LinearProgress, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import './SpeedReading.css';
 
@@ -73,72 +73,77 @@ function SpeedReadingPlus() {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.type === 'application/pdf') {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const buffer = e.target.result;
-          const pdfDoc = await PDFDocument.load(buffer);
-          let textContent = '';
-          for (let i = startPage - 1; i < endPage; i++) {
-            const page = pdfDoc.getPages()[i];
-            const pageText = await page.getTextContent();
-            textContent += pageText.items.map(item => item.str).join(' ') + ' ';
-          }
-          setText(textContent);
-        };
-        reader.readAsArrayBuffer(file);
-      } else if (file.type === 'text/plain') {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setText(e.target.result);
-        };
-        reader.readAsText(file);
-      }
+        if (file.type === 'application/pdf') {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const typedArray = new Uint8Array(e.target.result);
+                const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                let textContent = '';
+                
+                // Loop through pages
+                for (let i = startPage - 1; i < endPage; i++) {
+                    const page = await pdf.getPage(i + 1);
+                    const text = await page.getTextContent();
+                    text.items.forEach((item) => {
+                        textContent += `${item.str} `;
+                    });
+                }
+                
+                setText(textContent);
+            };
+            reader.readAsArrayBuffer(file);
+        } else if (file.type === 'text/plain') {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setText(e.target.result);
+            };
+            reader.readAsText(file);
+        }
     }
-  };
+};
 
   const handleSaveProgress = () => {
     const progressData = {
-      text,
-      currentIndex,
-      readingSpeed,
-      textSize,
-      fontFamily,
-      backgroundColor,
-      panelColor,
-      fontColor,
-      numWords
+        text,
+        currentIndex,
+        readingSpeed,
+        textSize,
+        fontFamily,
+        backgroundColor,
+        panelColor,
+        fontColor,
+        numWords,
+        totalWords: text.split(' ').length
     };
-    const csvContent = `data:text/csv;charset=utf-8,${Object.keys(progressData).join(',')}\n${Object.values(progressData).join(',')}`;
-    const encodedUri = encodeURI(csvContent);
+    
+    const jsonData = JSON.stringify(progressData);
+    const blob = new Blob([jsonData], { type: 'application/json' });
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'reading_progress.csv');
-    document.body.appendChild(link);
+    link.href = URL.createObjectURL(blob);
+    link.download = 'reading_progress.json';
     link.click();
-    document.body.removeChild(link);
-  };
+};
 
-  const handleLoadProgress = (e) => {
+const handleLoadProgress = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const csvData = e.target.result.split('\n')[1].split(',');
-        setText(csvData[0]);
-        setCurrentIndex(Number(csvData[1]));
-        setReadingSpeed(Number(csvData[2]));
-        setTextSize(Number(csvData[3]));
-        setFontFamily(csvData[4]);
-        setBackgroundColor(csvData[5]);
-        setPanelColor(csvData[6]);
-        setFontColor(csvData[7]);
-        setNumWords(Number(csvData[8]));
-        setProgress((Number(csvData[1]) / csvData[0].split(' ').length) * 100);
-      };
-      reader.readAsText(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const progressData = JSON.parse(e.target.result);
+            setText(progressData.text);
+            setCurrentIndex(progressData.currentIndex);
+            setReadingSpeed(progressData.readingSpeed);
+            setTextSize(progressData.textSize);
+            setFontFamily(progressData.fontFamily);
+            setBackgroundColor(progressData.backgroundColor);
+            setPanelColor(progressData.panelColor);
+            setFontColor(progressData.fontColor);
+            setNumWords(progressData.numWords);
+            setProgress((progressData.currentIndex / progressData.totalWords) * 100);
+        };
+        reader.readAsText(file);
     }
-  };
+};
 
   const handleFullscreenToggle = () => {
     setFullscreen(!fullscreen);
@@ -301,7 +306,7 @@ function SpeedReadingPlus() {
 
       <Box display="flex" justifyContent="center" marginTop={2}>
         <Button variant="contained" color="primary" onClick={handleSaveProgress} style={{ marginRight: 8 }}>Save for Later</Button>
-        <input type="file" onChange={handleLoadProgress} accept=".csv" style={{ display: 'none' }} id="load-progress" />
+        <input type="file" onChange={handleLoadProgress} accept=".json" style={{ display: 'none' }} id="load-progress" />
         <label htmlFor="load-progress">
           <Button variant="contained" color="secondary" component="span">Load</Button>
         </label>
