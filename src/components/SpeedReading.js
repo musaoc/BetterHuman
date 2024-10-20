@@ -165,6 +165,42 @@ const handleLoadProgress = (e) => {
   const handleEndPageChange = (e) => {
     setEndPage(parseInt(e.target.value));
   };
+  useEffect(() => {
+    const handleKeydown = (e) => {
+        switch (e.key) {
+            case 'f':
+            case 'F':
+                handleFullscreenToggle();
+                break;
+            case ' ':
+                e.preventDefault();  // Prevent default spacebar scroll behavior
+                if (isReading) {
+                    isPaused ? handleResume() : handlePause();
+                }
+                break;
+            case 'ArrowRight':
+                // If user presses right arrow, move to the next set of words or sentences
+                if (isReading || isPaused) {
+                    setCurrentIndex((prevIndex) => prevIndex + numWords);
+                }
+                break;
+            case 'ArrowLeft':
+                // If user presses left arrow, move to the previous set of words or sentences
+                if (isReading || isPaused && currentIndex > 0) {
+                    setCurrentIndex((prevIndex) => Math.max(prevIndex - numWords, 0));
+                }
+                break;
+            default:
+                break;
+        }
+    };
+
+    window.addEventListener('keydown', handleKeydown);
+    return () => {
+        window.removeEventListener('keydown', handleKeydown);
+    };
+}, [isReading, isPaused, currentIndex, numWords, handleFullscreenToggle]);
+
 
   return (
     <Container>
