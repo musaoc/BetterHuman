@@ -19,6 +19,23 @@ function App() {
   const [customTime, setCustomTime] = useState(60);
   const inputRef = useRef(null);
 
+  // Enhanced state variables
+  const [realTimeWpm, setRealTimeWpm] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+  const [lastCharCorrect, setLastCharCorrect] = useState(true);
+  const [practiceMode, setPracticeMode] = useState(false);
+  const [incorrectChars, setIncorrectChars] = useState(new Set());
+
+  // Extended word lists for new modes
+  const WORD_LISTS = {
+    easy: ['the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'it'],
+    medium: ['quick', 'brown', 'fox', 'jumps', 'over', 'lazy', 'dog', 'hello', 'world', 'typing'],
+    hard: ['exquisite', 'phenomenal', 'serendipity', 'eloquent', 'ephemeral', 'mellifluous'],
+    numbers: ['123', '456', '789', '101', '202', '303', '404', '505', '606', '707'],
+    special: ['@#$%', '^&*()', '!~`', '<>?', '{}[]', '|\\', '+=-', '_:;', '"\'']
+  };
+
   useEffect(() => {
     generateText();
     loadHighScores();
@@ -35,6 +52,13 @@ function App() {
     }
     return () => clearInterval(interval);
   }, [startTime, timer, mode, isFinished]);
+
+  useEffect(() => {
+    if (startTime && !isFinished) {
+      const wpmInterval = setInterval(updateRealTimeWpm, 500);
+      return () => clearInterval(wpmInterval);
+    }
+  }, [startTime, userInput, isFinished]);
 
   const loadHighScores = () => {
     const savedHighScores = localStorage.getItem('typingHighScores');
@@ -53,51 +77,71 @@ function App() {
   };
 
   const generateText = () => {
-    const easyWords = ['the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'it'];
-    const mediumWords = ['quick', 'brown', 'fox', 'jumps', 'over', 'lazy', 'dog', 'hello', 'world', 'typing'];
-    const hardWords = ['exquisite', 'phenomenal', 'serendipity', 'eloquent', 'ephemeral', 'mellifluous', 'quintessential', 'surreptitious', 'labyrinthine', 'metamorphosis'];
-
-    let words;
-    switch (difficulty) {
-      case 'easy':
-        words = easyWords;
-        break;
-      case 'hard':
-        words = hardWords;
-        break;
-      default:
-        words = mediumWords;
-    }
-
+    const words = WORD_LISTS[difficulty];
     const numberOfWords = mode === 'timed' ? 100 : targetWordCount;
-    const generatedText = Array(numberOfWords).fill().map(() => words[Math.floor(Math.random() * words.length)]).join(' ');
+
+    // Adjust word list based on mode
+    const selectedWords = mode === 'numbers' ? WORD_LISTS.numbers : mode === 'special' ? WORD_LISTS.special : words;
+
+    const generatedText = Array(numberOfWords)
+      .fill()
+      .map(() => selectedWords[Math.floor(Math.random() * selectedWords.length)])
+      .join(' ');
+
     setText(generatedText);
+  };
+
+  const updateRealTimeWpm = () => {
+    const timeDiff = (Date.now() - startTime) / 60000; // in minutes
+    const words = userInput.trim().split(/\s+/).length;
+    const currentWpm = Math.round((words / timeDiff) || 0);
+    setRealTimeWpm(currentWpm);
   };
 
   const handleInputChange = (e) => {
     const inputValue = e.target.value;
     setUserInput(inputValue);
 
-    if (!startTime) {
+    if (!startTime && !practiceMode) {
       setStartTime(Date.now());
     }
 
-    const wordCount = inputValue.trim().split(/\s+/).length;
-    const charCount = inputValue.length;
-    setWordCount(wordCount);
-    setCharCount(charCount);
+    const currentChar = inputValue[inputValue.length - 1];
+    const expectedChar = text[inputValue.length - 1];
+    const isCorrect = currentChar === expectedChar;
 
-    const timeDiff = (Date.now() - startTime) / 60000; // in minutes
-    const wordsPerMinute = Math.round((wordCount / timeDiff) || 0);
-    setWpm(wordsPerMinute);
+    if (isCorrect && lastCharCorrect) {
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      if (newStreak > maxStreak) {
+        setMaxStreak(newStreak);
+        localStorage.setItem('maxTypingStreak', newStreak.toString());
+      }
+    } else if (!isCorrect) {
+      setStreak(0);
+      setIncorrectChars((prev) => new Set([...prev, expectedChar]));
+    }
 
-    const newErrors = getErrorCount(inputValue);
-    setErrors(newErrors);
-    const accuracyPercent = Math.round(((charCount - newErrors) / charCount) * 100) || 100;
-    setAccuracy(accuracyPercent);
+    setLastCharCorrect(isCorrect);
 
-    if (mode === 'wordCount' && wordCount >= targetWordCount) {
-      handleTestComplete();
+    const words = inputValue.trim().split(/\s+/).length;
+    const chars = inputValue.length;
+    setWordCount(words);
+    setCharCount(chars);
+
+    if (!practiceMode) {
+      const timeDiff = (Date.now() - startTime) / 60000; // in minutes
+      const wordsPerMinute = Math.round((words / timeDiff) || 0);
+      setWpm(wordsPerMinute);
+
+      const newErrors = getErrorCount(inputValue);
+      setErrors(newErrors);
+      const accuracyPercent = Math.round(((chars - newErrors) / chars) * 100) || 100;
+      setAccuracy(accuracyPercent);
+
+      if (mode === 'wordCount' && words >= targetWordCount) {
+        handleTestComplete();
+      }
     }
   };
 
@@ -110,7 +154,16 @@ function App() {
   const handleTestComplete = () => {
     setIsFinished(true);
     inputRef.current.disabled = true;
-    saveHighScore();
+
+    const scoreKey = `${difficulty}-${mode}`;
+    const newHighScores = {
+      ...highScores,
+      [scoreKey]: Math.max(wpm, highScores[scoreKey] || 0),
+    };
+    setHighScores(newHighScores);
+    localStorage.setItem('typingHighScores', JSON.stringify(newHighScores));
+
+    localStorage.setItem('problematicChars', JSON.stringify([...incorrectChars]));
   };
 
   const restartTest = () => {
@@ -119,13 +172,19 @@ function App() {
     setWordCount(0);
     setCharCount(0);
     setWpm(0);
+    setRealTimeWpm(0);
     setAccuracy(100);
     setTimer(mode === 'timed' ? (customTime || 60) : 60);
     setIsFinished(false);
     setErrors(0);
+    setStreak(0);
+    setLastCharCorrect(true);
+    setIncorrectChars(new Set());
     generateText();
-    inputRef.current.disabled = false;
-    inputRef.current.focus();
+    if (inputRef.current) {
+      inputRef.current.disabled = false;
+      inputRef.current.focus();
+    }
   };
 
   const renderText = () => {
@@ -178,6 +237,8 @@ function App() {
       <div className="mode-selector">
         <button onClick={() => setMode('timed')} className={mode === 'timed' ? 'active' : ''}>Timed</button>
         <button onClick={() => setMode('wordCount')} className={mode === 'wordCount' ? 'active' : ''}>Word Count</button>
+        <button onClick={() => setMode('numbers')} className={mode === 'numbers' ? 'active' : ''}>Numbers Only</button>
+        <button onClick={() => setMode('special')} className={mode === 'special' ? 'active' : ''}>Special Characters</button>
       </div>
       {mode === 'timed' && (
         <div className="time-selector">
@@ -217,8 +278,11 @@ function App() {
       {renderProgressBar()}
       <div className="stats">
         <p>WPM: {wpm}</p>
+        <p>Real-Time WPM: {realTimeWpm}</p>
         <p>Accuracy: {accuracy}%</p>
         <p>Errors: {errors}</p>
+        <p>Streak: {streak}</p>
+        <p>Max Streak: {maxStreak}</p>
         {mode === 'timed' && <p>Time left: {timer}s</p>}
         {mode === 'wordCount' && <p>Words: {wordCount}/{targetWordCount}</p>}
         <p>High Score: {highScores[difficulty] || 0} WPM</p>
@@ -231,6 +295,7 @@ function App() {
           <p>WPM: {wpm}</p>
           <p>Accuracy: {accuracy}%</p>
           <p>Total Errors: {errors}</p>
+          <p>Max Streak: {maxStreak}</p>
           {wpm > (highScores[difficulty] || 0) && <p>New High Score!</p>}
         </div>
       )}
