@@ -1,14 +1,18 @@
 // src/components/TopBar.js
 
-import React from 'react';
-import './TopBar.css';
+import React from "react";
+import "./TopBar.css";
 
 const TopBar = ({ onPanelChange }) => {
   return (
     <div className="top-bar">
       <div className="logo-container">
         <div className="logo">
-          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            viewBox="0 0 48 48"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <path
               d="M13.8261 30.5736C16.7203 29.8826 20.2244 29.4783 24 29.4783C27.7756 29.4783 31.2797 29.8826 34.1739 30.5736C36.9144 31.2278 39.9967 32.7669 41.3563 33.8352L24.8486 7.36089C24.4571 6.73303 23.5429 6.73303 23.1514 7.36089L6.64374 33.8352C8.00331 32.7669 11.0856 31.2278 13.8261 30.5736Z"
               fill="currentColor"
@@ -24,20 +28,37 @@ const TopBar = ({ onPanelChange }) => {
         <h2 className="title">BetterHuman</h2>
       </div>
       <div className="nav-links">
-        <a href="#todo" onClick={() => onPanelChange('todo')}>To Do List</a>
-        <a href="#speedreading" onClick={() => onPanelChange('speedreading')}>Speed Reader</a>
-        <a href="#typing" onClick={() => onPanelChange('typing')}>Typing Speed</a>
+        <a href="#todo" onClick={() => onPanelChange("todo")}>
+          To Do List
+        </a>
+        <a href="#speedreading" onClick={() => onPanelChange("speedreading")}>
+          Speed Reader
+        </a>
+        <a href="#typing" onClick={() => onPanelChange("typing")}>
+          Typing Speed
+        </a>
+        <a href="#multiplayer" onClick={() => onPanelChange("multiplayer")}>
+          Multiplayer Race
+        </a>
       </div>
 
-
       <div className="button-group">
-        <button onClick={() => onPanelChange('Quests')} className="button-primary">QUESTS</button>
-        <button className="button-secondary">
-          <div className="icon">
-            {/* SVG Icon */}
-          </div>
+        <button
+          onClick={() => onPanelChange("Quests")}
+          className="button-primary"
+        >
+          QUESTS
         </button>
-        <div className="avatar" style={{ backgroundImage: 'url("https://cdn.usegalileo.ai/sdxl10/c3427612-577d-4266-8656-82bc2df05b8b.png")' }}></div>
+        <button className="button-secondary">
+          <div className="icon">{/* SVG Icon */}</div>
+        </button>
+        <div
+          className="avatar"
+          style={{
+            backgroundImage:
+              'url("https://cdn.usegalileo.ai/sdxl10/c3427612-577d-4266-8656-82bc2df05b8b.png")',
+          }}
+        ></div>
       </div>
     </div>
   );
