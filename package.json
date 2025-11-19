@@ -17,11 +17,17 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.25.1",
     "react-scripts": "5.0.1",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "uuid": "^10.0.0",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+          "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   },
  "scripts": {
     "start": "react-scripts start",
+    "server": "node server/server.js",
+    "dev": "concurrently \"npm run server\" \"npm start\"",
     "build": "react-scripts build",
     "electron-start": "electron .",
     "electron-build": "npm run build && electron-packager . SpeedReadingPlus --platform=win32 --arch=x64 --out=release-build --overwrite --electron-version=25.2.0"
@@ -43,5 +49,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  }
+  ,
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
