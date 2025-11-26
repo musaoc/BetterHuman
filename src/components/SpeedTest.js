@@ -1,306 +1,489 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './SpeedTest.css';
 
-function App() {
+const SAMPLE_TEXTS = [
+  "The quick brown fox jumps over the lazy dog. This sentence contains every letter of the English alphabet at least once.",
+  "Practice makes perfect. The more you type, the faster and more accurate you'll become. Keep pushing your limits!",
+  "Technology has revolutionized the way we communicate and work. Typing skills are more important than ever in today's digital world.",
+  "Success is not final, failure is not fatal: it is the courage to continue that counts. Keep practicing and improving every day.",
+  "The journey of a thousand miles begins with a single step. Your typing journey starts with pressing that first key."
+];
+
+const DIFFICULTY_SETTINGS = {
+  easy: { wordLength: 4, commonWords: true, label: '🟢 Easy' },
+  medium: { wordLength: 6, commonWords: true, label: '🟡 Medium' },
+  hard: { wordLength: 8, commonWords: false, label: '🔴 Hard' },
+  expert: { wordLength: 10, commonWords: false, label: '🔥 Expert' }
+};
+
+function SpeedTest() {
+  const [mode, setMode] = useState('practice'); // 'practice' or 'test'
+  const [difficulty, setDifficulty] = useState('medium');
+  const [testDuration, setTestDuration] = useState(60);
   const [text, setText] = useState('');
   const [userInput, setUserInput] = useState('');
+  const [isStarted, setIsStarted] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
   const [startTime, setStartTime] = useState(null);
-  const [wordCount, setWordCount] = useState(0);
-  const [charCount, setCharCount] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(60);
   const [wpm, setWpm] = useState(0);
   const [accuracy, setAccuracy] = useState(100);
-  const [timer, setTimer] = useState(60);
-  const [isFinished, setIsFinished] = useState(false);
-  const [mode, setMode] = useState('timed');
-  const [targetWordCount, setTargetWordCount] = useState(50);
   const [errors, setErrors] = useState(0);
-  const [difficulty, setDifficulty] = useState('medium');
-  const [highScores, setHighScores] = useState({});
-  const [customTime, setCustomTime] = useState(60);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [history, setHistory] = useState([]);
+  const [bestWpm, setBestWpm] = useState(0);
+  const [showKeyboard, setShowKeyboard] = useState(true);
+  const [activeKeys, setActiveKeys] = useState(new Set());
+
   const inputRef = useRef(null);
+  const timerRef = useRef(null);
 
-  // Enhanced state variables
-  const [realTimeWpm, setRealTimeWpm] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [maxStreak, setMaxStreak] = useState(0);
-  const [lastCharCorrect, setLastCharCorrect] = useState(true);
-  const [practiceMode, setPracticeMode] = useState(false);
-  const [incorrectChars, setIncorrectChars] = useState(new Set());
-
-  // Extended word lists for new modes
-  const WORD_LISTS = {
-    easy: ['the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'it'],
-    medium: ['quick', 'brown', 'fox', 'jumps', 'over', 'lazy', 'dog', 'hello', 'world', 'typing'],
-    hard: ['exquisite', 'phenomenal', 'serendipity', 'eloquent', 'ephemeral', 'mellifluous'],
-    numbers: ['123', '456', '789', '101', '202', '303', '404', '505', '606', '707'],
-    special: ['@#$%', '^&*()', '!~`', '<>?', '{}[]', '|\\', '+=-', '_:;', '"\'']
-  };
-
+  // Load history from localStorage
   useEffect(() => {
-    generateText();
-    loadHighScores();
-  }, [mode, targetWordCount, difficulty]);
-
-  useEffect(() => {
-    let interval;
-    if (startTime && mode === 'timed' && timer > 0 && !isFinished) {
-      interval = setInterval(() => {
-        setTimer((prevTimer) => prevTimer - 1);
-      }, 1000);
-    } else if (timer === 0) {
-      handleTestComplete();
+    const savedHistory = localStorage.getItem('typingHistory');
+    if (savedHistory) {
+      const parsed = JSON.parse(savedHistory);
+      setHistory(parsed);
+      if (parsed.length > 0) {
+        setBestWpm(Math.max(...parsed.map(h => h.wpm)));
+      }
     }
-    return () => clearInterval(interval);
-  }, [startTime, timer, mode, isFinished]);
+  }, []);
 
-  useEffect(() => {
-    if (startTime && !isFinished) {
-      const wpmInterval = setInterval(updateRealTimeWpm, 500);
-      return () => clearInterval(wpmInterval);
-    }
-  }, [startTime, userInput, isFinished]);
-
-  const loadHighScores = () => {
-    const savedHighScores = localStorage.getItem('typingHighScores');
-    if (savedHighScores) {
-      setHighScores(JSON.parse(savedHighScores));
-    }
-  };
-
-  const saveHighScore = () => {
-    const newHighScores = {
-      ...highScores,
-      [difficulty]: Math.max(wpm, highScores[difficulty] || 0)
-    };
-    setHighScores(newHighScores);
-    localStorage.setItem('typingHighScores', JSON.stringify(newHighScores));
-  };
-
+  // Generate random text based on difficulty
   const generateText = () => {
-    const words = WORD_LISTS[difficulty];
-    const numberOfWords = mode === 'timed' ? 100 : targetWordCount;
-
-    // Adjust word list based on mode
-    const selectedWords = mode === 'numbers' ? WORD_LISTS.numbers : mode === 'special' ? WORD_LISTS.special : words;
-
-    const generatedText = Array(numberOfWords)
-      .fill()
-      .map(() => selectedWords[Math.floor(Math.random() * selectedWords.length)])
-      .join(' ');
-
-    setText(generatedText);
-  };
-
-  const updateRealTimeWpm = () => {
-    const timeDiff = (Date.now() - startTime) / 60000; // in minutes
-    const words = userInput.trim().split(/\s+/).length;
-    const currentWpm = Math.round((words / timeDiff) || 0);
-    setRealTimeWpm(currentWpm);
-  };
-
-  const handleInputChange = (e) => {
-    const inputValue = e.target.value;
-    setUserInput(inputValue);
-
-    if (!startTime && !practiceMode) {
-      setStartTime(Date.now());
+    if (mode === 'practice') {
+      return SAMPLE_TEXTS[Math.floor(Math.random() * SAMPLE_TEXTS.length)];
     }
-
-    const currentChar = inputValue[inputValue.length - 1];
-    const expectedChar = text[inputValue.length - 1];
-    const isCorrect = currentChar === expectedChar;
-
-    if (isCorrect && lastCharCorrect) {
-      const newStreak = streak + 1;
-      setStreak(newStreak);
-      if (newStreak > maxStreak) {
-        setMaxStreak(newStreak);
-        localStorage.setItem('maxTypingStreak', newStreak.toString());
-      }
-    } else if (!isCorrect) {
-      setStreak(0);
-      setIncorrectChars((prev) => new Set([...prev, expectedChar]));
-    }
-
-    setLastCharCorrect(isCorrect);
-
-    const words = inputValue.trim().split(/\s+/).length;
-    const chars = inputValue.length;
-    setWordCount(words);
-    setCharCount(chars);
-
-    if (!practiceMode) {
-      const timeDiff = (Date.now() - startTime) / 60000; // in minutes
-      const wordsPerMinute = Math.round((words / timeDiff) || 0);
-      setWpm(wordsPerMinute);
-
-      const newErrors = getErrorCount(inputValue);
-      setErrors(newErrors);
-      const accuracyPercent = Math.round(((chars - newErrors) / chars) * 100) || 100;
-      setAccuracy(accuracyPercent);
-
-      if (mode === 'wordCount' && words >= targetWordCount) {
-        handleTestComplete();
+    
+    // For test mode, generate random text
+    const words = [];
+    const wordCount = Math.floor((testDuration / 60) * 200); // Adjust word count based on duration
+    
+    const commonWords = ['the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at', 'this'];
+    const hardWords = ['absolutely', 'necessary', 'throughout', 'development', 'significantly', 'extraordinary', 'understanding', 'communication', 'environment', 'opportunity'];
+    
+    for (let i = 0; i < wordCount; i++) {
+      if (DIFFICULTY_SETTINGS[difficulty].commonWords) {
+        words.push(commonWords[Math.floor(Math.random() * commonWords.length)]);
+      } else {
+        words.push(hardWords[Math.floor(Math.random() * hardWords.length)]);
       }
     }
+    
+    return words.join(' ');
   };
 
-  const getErrorCount = (input) => {
-    return input.split('').reduce((count, char, i) => {
-      return text[i] !== char ? count + 1 : count;
-    }, 0);
-  };
-
-  const handleTestComplete = () => {
-    setIsFinished(true);
-    inputRef.current.disabled = true;
-
-    const scoreKey = `${difficulty}-${mode}`;
-    const newHighScores = {
-      ...highScores,
-      [scoreKey]: Math.max(wpm, highScores[scoreKey] || 0),
-    };
-    setHighScores(newHighScores);
-    localStorage.setItem('typingHighScores', JSON.stringify(newHighScores));
-
-    localStorage.setItem('problematicChars', JSON.stringify([...incorrectChars]));
-  };
-
-  const restartTest = () => {
+  const startTest = () => {
+    const newText = generateText();
+    setText(newText);
     setUserInput('');
-    setStartTime(null);
-    setWordCount(0);
-    setCharCount(0);
-    setWpm(0);
-    setRealTimeWpm(0);
-    setAccuracy(100);
-    setTimer(mode === 'timed' ? (customTime || 60) : 60);
+    setIsStarted(true);
     setIsFinished(false);
+    setStartTime(Date.now());
+    setTimeLeft(testDuration);
+    setWpm(0);
+    setAccuracy(100);
     setErrors(0);
-    setStreak(0);
-    setLastCharCorrect(true);
-    setIncorrectChars(new Set());
-    generateText();
+    setCurrentWordIndex(0);
+    
     if (inputRef.current) {
-      inputRef.current.disabled = false;
       inputRef.current.focus();
     }
+
+    // Start timer
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          endTest();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const endTest = () => {
+    clearInterval(timerRef.current);
+    setIsFinished(true);
+    setIsStarted(false);
+
+    // Save to history
+    const newEntry = {
+      date: new Date().toISOString(),
+      wpm,
+      accuracy,
+      duration: testDuration - timeLeft,
+      mode,
+      difficulty
+    };
+
+    const newHistory = [newEntry, ...history].slice(0, 10); // Keep last 10
+    setHistory(newHistory);
+    localStorage.setItem('typingHistory', JSON.stringify(newHistory));
+
+    if (wpm > bestWpm) {
+      setBestWpm(wpm);
+    }
+  };
+
+  const resetTest = () => {
+    clearInterval(timerRef.current);
+    setText('');
+    setUserInput('');
+    setIsStarted(false);
+    setIsFinished(false);
+    setTimeLeft(testDuration);
+    setWpm(0);
+    setAccuracy(100);
+    setErrors(0);
+    setCurrentWordIndex(0);
+  };
+
+  // Calculate WPM and accuracy
+  useEffect(() => {
+    if (isStarted && userInput.length > 0) {
+      const timeElapsed = (Date.now() - startTime) / 1000 / 60; // in minutes
+      const wordsTyped = userInput.trim().split(/\s+/).length;
+      const calculatedWpm = Math.round(wordsTyped / timeElapsed);
+      setWpm(calculatedWpm);
+
+      // Calculate accuracy
+      let correctChars = 0;
+      let totalChars = 0;
+      const textChars = text.split('');
+      const inputChars = userInput.split('');
+
+      for (let i = 0; i < inputChars.length; i++) {
+        totalChars++;
+        if (inputChars[i] === textChars[i]) {
+          correctChars++;
+        }
+      }
+
+      const calculatedAccuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100;
+      setAccuracy(calculatedAccuracy);
+      setErrors(totalChars - correctChars);
+
+      // Track current word
+      const currentWord = userInput.trim().split(/\s+/).length - 1;
+      setCurrentWordIndex(currentWord);
+    }
+  }, [userInput, isStarted, startTime, text]);
+
+  // Keyboard highlight
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      setActiveKeys(prev => new Set(prev).add(e.key.toLowerCase()));
+    };
+
+    const handleKeyUp = (e) => {
+      setActiveKeys(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(e.key.toLowerCase());
+        return newSet;
+      });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getCharClass = (index) => {
+    if (index >= userInput.length) return '';
+    if (userInput[index] === text[index]) return 'correct';
+    return 'incorrect';
   };
 
   const renderText = () => {
-    return text.split('').map((char, index) => {
-      let className = '';
-      if (index < userInput.length) {
-        className = char === userInput[index] ? 'correct' : 'incorrect';
-      } else if (index === userInput.length) {
-        className = 'current';
-      }
-      return <span key={index} className={className}>{char}</span>;
-    });
+    return text.split('').map((char, index) => (
+      <span
+        key={index}
+        className={`char ${getCharClass(index)} ${index === userInput.length ? 'current' : ''}`}
+      >
+        {char}
+      </span>
+    ));
   };
 
-  const renderKeyboard = () => {
-    const layout = [
-      ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-      ['z', 'x', 'c', 'v', 'b', 'n', 'm']
-    ];
-    return (
-      <div className="keyboard">
-        {layout.map((row, rowIndex) => (
-          <div key={rowIndex} className="keyboard-row">
-            {row.map((key) => (
-              <div key={key} className={`key ${userInput[userInput.length - 1] === key ? 'active' : ''}`}>
-                {key}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderProgressBar = () => {
-    const progress = mode === 'timed' 
-      ? ((customTime || 60) - timer) / (customTime || 60) * 100
-      : (wordCount / targetWordCount) * 100;
-    return (
-      <div className="progress-bar">
-        <div className="progress" style={{ width: `${progress}%` }}></div>
-      </div>
-    );
-  };
+  const KEYBOARD_LAYOUT = [
+    ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+    ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+  ];
 
   return (
-    <div className="App">
-      <h1>Advanced Typing Practice</h1>
-      <div className="mode-selector">
-        <button onClick={() => setMode('timed')} className={mode === 'timed' ? 'active' : ''}>Timed</button>
-        <button onClick={() => setMode('wordCount')} className={mode === 'wordCount' ? 'active' : ''}>Word Count</button>
-        <button onClick={() => setMode('numbers')} className={mode === 'numbers' ? 'active' : ''}>Numbers Only</button>
-        <button onClick={() => setMode('special')} className={mode === 'special' ? 'active' : ''}>Special Characters</button>
+    <div className="speed-test-container">
+      <div className="speed-test-header">
+        <h1>⚡ Speed Typing Master</h1>
+        <p>Test and improve your typing speed and accuracy</p>
       </div>
-      {mode === 'timed' && (
-        <div className="time-selector">
-          <button onClick={() => setTimer(15)}>15s</button>
-          <button onClick={() => setTimer(30)}>30s</button>
-          <button onClick={() => setTimer(60)}>60s</button>
-          <input 
-            type="number" 
-            value={customTime} 
-            onChange={(e) => setCustomTime(parseInt(e.target.value))} 
-            placeholder="Custom time"
-          />
-          <button onClick={() => setTimer(customTime)}>Set Custom Time</button>
+
+      {!isStarted && !isFinished && (
+        <div className="setup-screen">
+          {/* Mode Selection */}
+          <div className="setup-section">
+            <h3>📝 Select Mode</h3>
+            <div className="mode-buttons">
+              <button
+                className={`mode-btn ${mode === 'practice' ? 'active' : ''}`}
+                onClick={() => setMode('practice')}
+              >
+                🎯 Practice Mode
+                <span className="mode-desc">Type sample texts to warm up</span>
+              </button>
+              <button
+                className={`mode-btn ${mode === 'test' ? 'active' : ''}`}
+                onClick={() => setMode('test')}
+              >
+                ⏱️ Timed Test
+                <span className="mode-desc">Challenge yourself with a timer</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Difficulty Selection */}
+          <div className="setup-section">
+            <h3>🎚️ Select Difficulty</h3>
+            <div className="difficulty-buttons">
+              {Object.entries(DIFFICULTY_SETTINGS).map(([key, value]) => (
+                <button
+                  key={key}
+                  className={`difficulty-btn ${difficulty === key ? 'active' : ''}`}
+                  onClick={() => setDifficulty(key)}
+                >
+                  {value.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Duration Selection (for test mode) */}
+          {mode === 'test' && (
+            <div className="setup-section">
+              <h3>⏳ Test Duration</h3>
+              <div className="duration-buttons">
+                {[30, 60, 120, 300].map(duration => (
+                  <button
+                    key={duration}
+                    className={`duration-btn ${testDuration === duration ? 'active' : ''}`}
+                    onClick={() => setTestDuration(duration)}
+                  >
+                    {duration < 60 ? `${duration}s` : `${duration / 60}m`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Statistics */}
+          {history.length > 0 && (
+            <div className="stats-overview">
+              <div className="stat-box">
+                <div className="stat-icon">🏆</div>
+                <div className="stat-content">
+                  <div className="stat-value">{bestWpm}</div>
+                  <div className="stat-label">Best WPM</div>
+                </div>
+              </div>
+              <div className="stat-box">
+                <div className="stat-icon">📊</div>
+                <div className="stat-content">
+                  <div className="stat-value">{history.length}</div>
+                  <div className="stat-label">Tests Completed</div>
+                </div>
+              </div>
+              <div className="stat-box">
+                <div className="stat-icon">🎯</div>
+                <div className="stat-content">
+                  <div className="stat-value">
+                    {Math.round(history.reduce((acc, h) => acc + h.accuracy, 0) / history.length)}%
+                  </div>
+                  <div className="stat-label">Avg Accuracy</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button className="start-btn" onClick={startTest}>
+            🚀 Start {mode === 'test' ? 'Test' : 'Practice'}
+          </button>
         </div>
       )}
-      {mode === 'wordCount' && (
-        <input 
-          type="number" 
-          value={targetWordCount} 
-          onChange={(e) => setTargetWordCount(parseInt(e.target.value))} 
-          placeholder="Target word count"
-        />
+
+      {isStarted && (
+        <div className="test-screen">
+          {/* Live Stats */}
+          <div className="live-stats">
+            <div className="stat-item">
+              <div className="stat-label">⏱️ Time</div>
+              <div className="stat-value">{formatTime(timeLeft)}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">⚡ WPM</div>
+              <div className="stat-value">{wpm}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">🎯 Accuracy</div>
+              <div className="stat-value">{accuracy}%</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">❌ Errors</div>
+              <div className="stat-value">{errors}</div>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="typing-progress">
+            <div 
+              className="progress-fill"
+              style={{ width: `${(userInput.length / text.length) * 100}%` }}
+            />
+          </div>
+
+          {/* Text Display */}
+          <div className="text-display">
+            {renderText()}
+          </div>
+
+          {/* Input Area */}
+          <textarea
+            ref={inputRef}
+            className="typing-input"
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            placeholder="Start typing here..."
+            disabled={!isStarted}
+            autoFocus
+          />
+
+          {/* Virtual Keyboard */}
+          {showKeyboard && (
+            <div className="virtual-keyboard">
+              <div className="keyboard-toggle">
+                <button onClick={() => setShowKeyboard(!showKeyboard)}>
+                  {showKeyboard ? '⌨️ Hide Keyboard' : '⌨️ Show Keyboard'}
+                </button>
+              </div>
+              {KEYBOARD_LAYOUT.map((row, rowIndex) => (
+                <div key={rowIndex} className="keyboard-row">
+                  {row.map(key => (
+                    <div
+                      key={key}
+                      className={`key ${activeKeys.has(key) ? 'active' : ''} ${text[userInput.length] === key ? 'next' : ''}`}
+                    >
+                      {key}
+                    </div>
+                  ))}
+                </div>
+              ))}
+              <div className="keyboard-row">
+                <div className={`key spacebar ${activeKeys.has(' ') ? 'active' : ''}`}>Space</div>
+              </div>
+            </div>
+          )}
+
+          <button className="reset-btn" onClick={resetTest}>
+            🔄 Reset
+          </button>
+        </div>
       )}
-      <div className="difficulty-selector">
-        <button onClick={() => setDifficulty('easy')} className={difficulty === 'easy' ? 'active' : ''}>Easy</button>
-        <button onClick={() => setDifficulty('medium')} className={difficulty === 'medium' ? 'active' : ''}>Medium</button>
-        <button onClick={() => setDifficulty('hard')} className={difficulty === 'hard' ? 'active' : ''}>Hard</button>
-      </div>
-      <div className="text-display">{renderText()}</div>
-      <textarea
-        ref={inputRef}
-        value={userInput}
-        onChange={handleInputChange}
-        placeholder="Start typing here..."
-        disabled={isFinished}
-      />
-      {renderProgressBar()}
-      <div className="stats">
-        <p>WPM: {wpm}</p>
-        <p>Real-Time WPM: {realTimeWpm}</p>
-        <p>Accuracy: {accuracy}%</p>
-        <p>Errors: {errors}</p>
-        <p>Streak: {streak}</p>
-        <p>Max Streak: {maxStreak}</p>
-        {mode === 'timed' && <p>Time left: {timer}s</p>}
-        {mode === 'wordCount' && <p>Words: {wordCount}/{targetWordCount}</p>}
-        <p>High Score: {highScores[difficulty] || 0} WPM</p>
-      </div>
-      {renderKeyboard()}
-      <button onClick={restartTest}>Restart</button>
+
       {isFinished && (
-        <div className="result">
-          <h2>Test Complete!</h2>
-          <p>WPM: {wpm}</p>
-          <p>Accuracy: {accuracy}%</p>
-          <p>Total Errors: {errors}</p>
-          <p>Max Streak: {maxStreak}</p>
-          {wpm > (highScores[difficulty] || 0) && <p>New High Score!</p>}
+        <div className="results-screen">
+          <h2>🎉 Test Complete!</h2>
+          
+          <div className="results-stats">
+            <div className="result-card">
+              <div className="result-icon">⚡</div>
+              <div className="result-value">{wpm}</div>
+              <div className="result-label">Words Per Minute</div>
+              {wpm > bestWpm && <div className="badge">🏆 New Record!</div>}
+            </div>
+            
+            <div className="result-card">
+              <div className="result-icon">🎯</div>
+              <div className="result-value">{accuracy}%</div>
+              <div className="result-label">Accuracy</div>
+            </div>
+            
+            <div className="result-card">
+              <div className="result-icon">❌</div>
+              <div className="result-value">{errors}</div>
+              <div className="result-label">Errors</div>
+            </div>
+            
+            <div className="result-card">
+              <div className="result-icon">⏱️</div>
+              <div className="result-value">{testDuration - timeLeft}s</div>
+              <div className="result-label">Duration</div>
+            </div>
+          </div>
+
+          {/* Performance Message */}
+          <div className="performance-message">
+            {wpm >= 80 && accuracy >= 95 && (
+              <div className="message excellent">
+                <span className="message-icon">🔥</span>
+                <span>Excellent! You're a typing master!</span>
+              </div>
+            )}
+            {wpm >= 60 && wpm < 80 && accuracy >= 90 && (
+              <div className="message good">
+                <span className="message-icon">👍</span>
+                <span>Great job! Keep practicing to improve further!</span>
+              </div>
+            )}
+            {wpm < 60 && (
+              <div className="message improve">
+                <span className="message-icon">💪</span>
+                <span>Keep practicing! You'll improve with time!</span>
+              </div>
+            )}
+          </div>
+
+          {/* History */}
+          {history.length > 1 && (
+            <div className="history-section">
+              <h3>📈 Recent Results</h3>
+              <div className="history-list">
+                {history.slice(0, 5).map((entry, index) => (
+                  <div key={index} className="history-item">
+                    <span className="history-date">
+                      {new Date(entry.date).toLocaleDateString()}
+                    </span>
+                    <span className="history-wpm">{entry.wpm} WPM</span>
+                    <span className="history-accuracy">{entry.accuracy}%</span>
+                    <span className="history-difficulty">{DIFFICULTY_SETTINGS[entry.difficulty].label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="results-actions">
+            <button className="btn-primary" onClick={startTest}>
+              🔄 Try Again
+            </button>
+            <button className="btn-secondary" onClick={resetTest}>
+              ⚙️ Change Settings
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-export default App;
+export default SpeedTest;
