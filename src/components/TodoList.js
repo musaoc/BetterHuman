@@ -1,9 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { saveTasks, getTasks, saveJournalEntry, getJournalEntries, incrementStat, addXP } from '../services/userService';
 import './TodoList.css';
 
 const CATEGORIES = ['All', 'Work', 'Personal', 'Shopping', 'Health', 'Other'];
 const PRIORITIES = ['low', 'medium', 'high'];
 const STATUSES = ['To Do', 'In Progress', 'Done'];
+
+const JOURNAL_PROMPTS = [
+  "What are you grateful for today?",
+  "What's one thing you learned today?",
+  "How are you feeling right now?",
+  "What's your biggest win today?",
+  "What would make today great?",
+  "What's challenging you right now?",
+  "What are you looking forward to?",
+  "How can you improve tomorrow?"
+];
 
 const initialTasks = [
   { 
@@ -21,6 +34,7 @@ const initialTasks = [
 ];
 
 function TodoList() {
+  const { currentUser } = useAuth();
   const [tasks, setTasks] = useState(initialTasks);
   const [newTask, setNewTask] = useState('');
   const [editingTask, setEditingTask] = useState(null);
@@ -32,24 +46,58 @@ function TodoList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCompleted, setShowCompleted] = useState(true);
   const [draggedTask, setDraggedTask] = useState(null);
+  
+  // Journal states
+  const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' or 'journal'
+  const [journalEntry, setJournalEntry] = useState('');
+  const [journalMood, setJournalMood] = useState('neutral');
+  const [journalEntries, setJournalEntries] = useState([]);
+  const [currentPrompt, setCurrentPrompt] = useState(JOURNAL_PROMPTS[0]);
+  const [savingJournal, setSavingJournal] = useState(false);
 
-  // Load tasks from localStorage
+  // Load tasks from localStorage or Firestore
   useEffect(() => {
-    const savedTasks = localStorage.getItem('betterHumanTasks');
-    if (savedTasks) {
-      try {
-        const parsedTasks = JSON.parse(savedTasks);
-        setTasks(parsedTasks);
-      } catch (error) {
-        console.error('Error loading tasks:', error);
+    const loadTasks = async () => {
+      if (currentUser) {
+        // Load from Firestore
+        const result = await getTasks(currentUser.uid);
+        if (result.success && result.tasks.length > 0) {
+          setTasks(result.tasks);
+        }
+        // Load journal entries
+        const journalResult = await getJournalEntries(currentUser.uid);
+        if (journalResult.success) {
+          setJournalEntries(journalResult.entries);
+        }
+      } else {
+        // Load from localStorage for non-authenticated users
+        const savedTasks = localStorage.getItem('betterHumanTasks');
+        if (savedTasks) {
+          try {
+            const parsedTasks = JSON.parse(savedTasks);
+            setTasks(parsedTasks);
+          } catch (error) {
+            console.error('Error loading tasks:', error);
+          }
+        }
       }
-    }
-  }, []);
+    };
+    loadTasks();
+    // Set random prompt
+    setCurrentPrompt(JOURNAL_PROMPTS[Math.floor(Math.random() * JOURNAL_PROMPTS.length)]);
+  }, [currentUser]);
 
-  // Save tasks to localStorage
+  // Save tasks to localStorage or Firestore
   useEffect(() => {
-    localStorage.setItem('betterHumanTasks', JSON.stringify(tasks));
-  }, [tasks]);
+    const saveTasksData = async () => {
+      if (currentUser) {
+        await saveTasks(currentUser.uid, tasks);
+      } else {
+        localStorage.setItem('betterHumanTasks', JSON.stringify(tasks));
+      }
+    };
+    saveTasksData();
+  }, [tasks, currentUser]);
 
   const handleAddTask = (e) => {
     e.preventDefault();
@@ -73,12 +121,21 @@ function TodoList() {
     }
   };
 
-  const handleToggleTask = (taskId) => {
+  const handleToggleTask = async (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    const newCompleted = !task.completed;
+    
     setTasks(tasks.map(task =>
       task.id === taskId 
-        ? { ...task, completed: !task.completed, status: !task.completed ? 'Done' : 'To Do' }
+        ? { ...task, completed: newCompleted, status: newCompleted ? 'Done' : 'To Do' }
         : task
     ));
+    
+    // Track completion in Firestore
+    if (currentUser && newCompleted) {
+      await incrementStat(currentUser.uid, 'tasksCompleted', 1);
+      await addXP(currentUser.uid, 5); // 5 XP per task completed
+    }
   };
 
   const handleDeleteTask = (taskId) => {
@@ -178,6 +235,61 @@ function TodoList() {
     linkElement.click();
   };
 
+  // Journal functions
+  const handleSaveJournal = async () => {
+    if (!journalEntry.trim()) return;
+    
+    setSavingJournal(true);
+    
+    const entry = {
+      content: journalEntry.trim(),
+      mood: journalMood,
+      prompt: currentPrompt,
+      date: new Date().toISOString()
+    };
+    
+    if (currentUser) {
+      await saveJournalEntry(currentUser.uid, entry);
+      const result = await getJournalEntries(currentUser.uid);
+      if (result.success) {
+        setJournalEntries(result.entries);
+      }
+    } else {
+      // Save to localStorage for non-authenticated users
+      const savedEntries = JSON.parse(localStorage.getItem('betterHumanJournal') || '[]');
+      savedEntries.unshift({ id: Date.now(), ...entry });
+      localStorage.setItem('betterHumanJournal', JSON.stringify(savedEntries));
+      setJournalEntries(savedEntries);
+    }
+    
+    setJournalEntry('');
+    setJournalMood('neutral');
+    setCurrentPrompt(JOURNAL_PROMPTS[Math.floor(Math.random() * JOURNAL_PROMPTS.length)]);
+    setSavingJournal(false);
+  };
+
+  const getMoodEmoji = (mood) => {
+    const moods = {
+      great: '😄',
+      good: '🙂',
+      neutral: '😐',
+      bad: '😔',
+      terrible: '😢'
+    };
+    return moods[mood] || '😐';
+  };
+
+  const formatJournalDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <div className="todo-app-container">
       <div className="todo-header">
@@ -185,8 +297,26 @@ function TodoList() {
         <p>Organize your life, one task at a time</p>
       </div>
 
-      {/* Stats Dashboard */}
-      <div className="stats-dashboard">
+      {/* Tab Navigation */}
+      <div className="tab-navigation">
+        <button 
+          className={`tab-button ${activeTab === 'tasks' ? 'active' : ''}`}
+          onClick={() => setActiveTab('tasks')}
+        >
+          <span>📋</span> Tasks
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'journal' ? 'active' : ''}`}
+          onClick={() => setActiveTab('journal')}
+        >
+          <span>📓</span> Daily Journal
+        </button>
+      </div>
+
+      {activeTab === 'tasks' ? (
+        <>
+          {/* Stats Dashboard */}
+          <div className="stats-dashboard">
         <div className="stat-card">
           <div className="stat-icon">📊</div>
           <div className="stat-content">
@@ -455,6 +585,86 @@ function TodoList() {
           🗑️ Clear All
         </button>
       </div>
+        </>
+      ) : (
+        /* Journal Tab */
+        <div className="journal-container">
+          {/* Journal Entry Form */}
+          <div className="journal-form">
+            <div className="journal-prompt">
+              <span className="prompt-icon">💭</span>
+              <p>{currentPrompt}</p>
+              <button 
+                className="refresh-prompt"
+                onClick={() => setCurrentPrompt(JOURNAL_PROMPTS[Math.floor(Math.random() * JOURNAL_PROMPTS.length)])}
+              >
+                🔄
+              </button>
+            </div>
+            
+            <div className="mood-selector">
+              <span className="mood-label">How are you feeling?</span>
+              <div className="mood-options">
+                {['terrible', 'bad', 'neutral', 'good', 'great'].map(mood => (
+                  <button
+                    key={mood}
+                    className={`mood-button ${journalMood === mood ? 'selected' : ''}`}
+                    onClick={() => setJournalMood(mood)}
+                    title={mood}
+                  >
+                    {getMoodEmoji(mood)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <textarea
+              className="journal-textarea"
+              placeholder="Write your thoughts here..."
+              value={journalEntry}
+              onChange={(e) => setJournalEntry(e.target.value)}
+              rows={6}
+            />
+            
+            <button 
+              className="btn-primary journal-save"
+              onClick={handleSaveJournal}
+              disabled={!journalEntry.trim() || savingJournal}
+            >
+              {savingJournal ? 'Saving...' : '💾 Save Entry'}
+            </button>
+          </div>
+          
+          {/* Journal Entries List */}
+          <div className="journal-entries">
+            <h3>📚 Past Entries</h3>
+            {journalEntries.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">📝</div>
+                <h3>No journal entries yet</h3>
+                <p>Start writing to track your thoughts and feelings</p>
+              </div>
+            ) : (
+              <div className="entries-list">
+                {journalEntries.map((entry, index) => (
+                  <div key={entry.id || index} className="journal-entry-card">
+                    <div className="entry-header">
+                      <span className="entry-mood">{getMoodEmoji(entry.mood)}</span>
+                      <span className="entry-date">
+                        {formatJournalDate(entry.date || entry.createdAt?.toDate?.() || new Date())}
+                      </span>
+                    </div>
+                    {entry.prompt && (
+                      <p className="entry-prompt">"{entry.prompt}"</p>
+                    )}
+                    <p className="entry-content">{entry.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

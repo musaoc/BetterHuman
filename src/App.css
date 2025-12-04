@@ -1,13 +1,91 @@
 /* App.css */
 
+* {
+  box-sizing: border-box;
+}
+
 .App {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background: linear-gradient(135deg, #1a1d23 0%, #23272a 100%);
+}
+
+.dashboard-layout {
+  display: flex;
+  padding-top: 70px; /* Account for fixed top bar */
+  min-height: calc(100vh - 70px);
+}
+
+.stats-sidebar {
+  width: 320px;
+  padding: 1.5rem;
+  position: sticky;
+  top: 70px;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+  flex-shrink: 0;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .main-content {
-  padding: 60px 20px 20px; /* Adjust padding to account for the top bar */
+  flex: 1;
+  padding: 20px;
   width: 100%;
+  transition: all 0.3s ease;
+}
+
+.main-content.with-sidebar {
+  width: calc(100% - 320px);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .stats-sidebar {
+    display: none;
+  }
+  
+  .main-content.with-sidebar {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-layout {
+    padding-top: 60px;
+  }
+  
+  .main-content {
+    padding: 10px;
+  }
 }
 
