@@ -1,0 +1,258 @@
+# BetterHuman - Development Task List
+
+## Current Status Summary
+
+### ✅ What's Working
+- Firebase Authentication (Login/Signup)
+- Firestore database configured
+- User service for data persistence (partially implemented)
+- Speed Reading module
+- Todo List with Journal
+- Quests/Donation page
+- Multiplayer typing race (requires separate server)
+
+### ⚠️ Issues to Address
+1. **Data Persistence**: Partially implemented - userService exists but not all components use it
+2. **Server Duplication**: `server.js` has duplicate code (two complete server implementations)
+3. **Multiplayer Deployment**: Socket.IO server can't run on Vercel (serverless)
+
+---
+
+## 🚀 Priority Task List (Easiest First)
+
+### Phase 1: Quick Fixes (30 mins each)
+
+#### Task 1.1: Fix Duplicate Server Code ⭐ EASY
+**File**: `server/server.js`
+**Issue**: The file contains two complete server implementations concatenated
+**Action**: Remove duplicate code (keep first implementation, delete from line 320 onwards)
+
+#### Task 1.2: Add Loading States to Components ⭐ EASY
+**Files**: All components
+**Action**: Add loading spinners while data is being fetched
+```javascript
+// Example pattern to implement
+const [loading, setLoading] = useState(true);
+// Show <LoadingSpinner /> when loading is true
+```
+
+#### Task 1.3: Add Error Boundaries ⭐ EASY
+**Action**: Create ErrorBoundary component to catch React errors gracefully
+
+#### Task 1.4: Fix Import Paths ⭐ EASY
+**Action**: Ensure all components properly import from userService and AuthContext
+
+#### Task 1.5: Add Toast Notifications ⭐ EASY
+**Action**: Install react-toastify for user feedback on actions
+
+---
+
+### Phase 2: Data Persistence (1-2 hours each)
+
+#### Task 2.1: Connect TodoList to Firestore ⭐⭐ MEDIUM
+**File**: `src/components/TodoList.js`
+**Current**: Uses localStorage
+**Action**: 
+- Import userService functions
+- Save todos to Firestore when user is logged in
+- Fall back to localStorage for guests
+
+#### Task 2.2: Connect Speed Reading Stats to Firestore ⭐⭐ MEDIUM
+**File**: `src/components/speed-reading/index.js`
+**Action**: 
+- Call `recordReadingSession()` after each session
+- Sync reading history with cloud
+
+#### Task 2.3: Sync Quests Progress ⭐⭐ MEDIUM
+**File**: `src/components/Quests.js`
+**Action**:
+- Track completed quests in Firestore
+- Reset daily quests at midnight
+- Reset weekly quests on Monday
+
+#### Task 2.4: Create Offline Support ⭐⭐⭐ HARDER
+**Action**:
+- Implement service worker for offline access
+- Queue changes when offline, sync when online
+
+---
+
+### Phase 3: Multiplayer Deployment Solution ⭐⭐⭐ IMPORTANT
+
+#### The Problem
+Vercel is **serverless** - it can't maintain persistent WebSocket connections needed for Socket.IO multiplayer.
+
+#### Solution Options
+
+**Option A: Separate Backend Hosting (Recommended)**
+Deploy Socket.IO server to one of these free platforms:
+1. **Railway.app** (Free tier, easy setup)
+2. **Render.com** (Free tier, auto-sleep after 15 mins)
+3. **Fly.io** (Free tier, always-on)
+4. **Cyclic.sh** (Free, good for Node.js)
+
+```javascript
+// Update client to connect to deployed server
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://your-server.railway.app';
+const socket = io(SOCKET_URL);
+```
+
+**Option B: Use Firebase Realtime Database Instead**
+Replace Socket.IO with Firebase Realtime Database for multiplayer:
+- No separate server needed
+- Real-time sync built-in
+- Works with Vercel
+
+**Option C: Use Ably/Pusher (Managed WebSockets)**
+- Third-party real-time service
+- Free tiers available
+- No server management
+
+#### Recommended Approach: Railway.app Deployment
+```bash
+# 1. Create railway.json in server folder
+{
+  "build": { "builder": "NIXPACKS" },
+  "deploy": { "startCommand": "node server.js" }
+}
+
+# 2. Deploy
+railway login
+railway init
+railway up
+
+# 3. Update .env in React app
+REACT_APP_SOCKET_URL=https://your-app.railway.app
+```
+
+---
+
+### Phase 4: New Features (2-4 hours each)
+
+#### Task 4.1: Streak Calendar View ⭐⭐ MEDIUM
+**Action**: Add calendar showing daily activity streaks
+
+#### Task 4.2: Achievement System ⭐⭐ MEDIUM
+**Action**: 
+- Create achievements collection in Firestore
+- Award badges for milestones (first task, 7-day streak, 1000 words read, etc.)
+
+#### Task 4.3: Weekly/Monthly Progress Reports ⭐⭐ MEDIUM
+**Action**: Generate summary of user's progress
+
+#### Task 4.4: Social Features ⭐⭐⭐ HARDER
+**Action**:
+- Friend system
+- Share achievements
+- Leaderboards
+
+#### Task 4.5: Habit Tracker ⭐⭐ MEDIUM
+**Action**: Add recurring habit tracking with streaks
+
+#### Task 4.6: Pomodoro Timer Integration ⭐⭐ MEDIUM
+**Action**: Add focus timer for productivity
+
+#### Task 4.7: Reading List/Book Tracker ⭐⭐ MEDIUM
+**Action**: Track books being read, notes, progress
+
+#### Task 4.8: Goal Setting Module ⭐⭐ MEDIUM
+**Action**: Set long-term goals with milestones
+
+---
+
+### Phase 5: UI/UX Improvements
+
+#### Task 5.1: Mobile Responsiveness ⭐⭐ MEDIUM
+**Action**: Ensure all components work on mobile
+
+#### Task 5.2: Dark/Light Theme Toggle ⭐ EASY
+**Action**: Add theme switcher (currently dark only)
+
+#### Task 5.3: Onboarding Flow ⭐⭐ MEDIUM
+**Action**: First-time user tutorial
+
+#### Task 5.4: Dashboard Widgets ⭐⭐ MEDIUM
+**Action**: Customizable dashboard layout
+
+#### Task 5.5: Keyboard Shortcuts ⭐ EASY
+**Action**: Add keyboard navigation
+
+---
+
+### Phase 6: Analytics & Insights
+
+#### Task 6.1: Activity Heatmap ⭐⭐ MEDIUM
+**Action**: GitHub-style contribution graph
+
+#### Task 6.2: Productivity Analytics ⭐⭐⭐ HARDER
+**Action**: Track time spent, most productive hours
+
+#### Task 6.3: Reading Speed Trends ⭐⭐ MEDIUM
+**Action**: Chart showing WPM improvement over time
+
+---
+
+## 🔧 Technical Debt
+
+1. [ ] Remove duplicate server code
+2. [ ] Add TypeScript for type safety
+3. [ ] Add unit tests (Jest/React Testing Library)
+4. [ ] Add E2E tests (Cypress/Playwright)
+5. [ ] Set up CI/CD pipeline
+6. [ ] Add proper error handling throughout
+7. [ ] Implement proper logging
+8. [ ] Add rate limiting to prevent abuse
+9. [ ] Security audit (XSS, CSRF protection)
+
+---
+
+## 📁 Environment Variables Needed
+
+Create `.env` file in root:
+```env
+# Firebase (already configured)
+REACT_APP_FIREBASE_API_KEY=your_key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your_domain
+REACT_APP_FIREBASE_PROJECT_ID=your_project_id
+
+# Multiplayer Server (after deployment)
+REACT_APP_SOCKET_URL=https://your-server.railway.app
+
+# Optional
+REACT_APP_ENV=development
+```
+
+---
+
+## 🎯 Suggested Sprint Plan
+
+### Week 1: Stability
+- [ ] Task 1.1: Fix server duplication
+- [ ] Task 1.2-1.5: Quick fixes
+- [ ] Task 2.1-2.3: Data persistence
+
+### Week 2: Multiplayer
+- [ ] Deploy server to Railway
+- [ ] Update client socket connection
+- [ ] Test multiplayer on deployed version
+
+### Week 3: Features
+- [ ] Task 4.1: Streak calendar
+- [ ] Task 4.2: Achievements
+- [ ] Task 4.5: Habit tracker
+
+### Week 4: Polish
+- [ ] Task 5.1: Mobile responsiveness
+- [ ] Task 5.3: Onboarding
+- [ ] Task 6.1: Activity heatmap
+
+---
+
+## 📝 Notes for AI Implementation
+
+When implementing tasks, prioritize:
+1. User authentication state checks
+2. Error handling with try/catch
+3. Loading states for async operations
+4. Fallback to localStorage for guests
+5. Real-time sync with Firestore listeners
