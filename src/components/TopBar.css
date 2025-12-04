@@ -251,6 +251,8 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-decoration: none;
+  font-size: 1.1rem;
 }
 
 .button-secondary:hover {
@@ -258,6 +260,16 @@
   color: white;
   transform: translateY(-2px) rotate(5deg);
   box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
+}
+
+.stats-toggle {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: #667eea;
+  color: white;
+}
+
+.stats-toggle:hover {
+  background: #667eea;
 }
 
 .notification-badge {
@@ -366,6 +378,55 @@
   background: rgba(102, 126, 234, 0.2);
   color: white;
   transform: translateX(5px);
+}
+
+.dropdown-header {
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+.dropdown-name {
+  display: block;
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.dropdown-level {
+  display: block;
+  color: #667eea;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.dropdown-stats-preview {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(102, 126, 234, 0.15);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.stat-pill span:first-child {
+  font-size: 0.9rem;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  margin: 0.5rem 0;
 }
 
 .dropdown-item.logout {

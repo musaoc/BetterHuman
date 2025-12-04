@@ -10,6 +10,7 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "firebase": "^12.6.0",
     "papaparse": "^5.4.1",
     "pdfjs-dist": "^4.5.136",
     "react": "^18.3.1",
@@ -20,18 +21,16 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "uuid": "^10.0.0",
-    "web-vitals": "^2.1.4",
-          "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
+    "web-vitals": "^2.1.4"
   },
- "scripts": {
+  "scripts": {
     "start": "react-scripts start",
     "server": "node server/server.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
     "build": "react-scripts build",
     "electron-start": "electron .",
     "electron-build": "npm run build && electron-packager . SpeedReadingPlus --platform=win32 --arch=x64 --out=release-build --overwrite --electron-version=25.2.0"
-},
+  },
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -49,8 +48,7 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
-  ,
+  },
   "devDependencies": {
     "concurrently": "^8.2.2"
   }

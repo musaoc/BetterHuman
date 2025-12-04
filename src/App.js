@@ -1,32 +1,24 @@
-// src/App.js
-
-import React, { useState } from "react";
-import TopBar from "./components/TopBar";
-import "./App.css";
-import TodoList from "./components/TodoList";
-import SpeedTest from "./components/SpeedTest";
-import SpeedReadingPlus from "./components/SpeedReading";
-import Quests from "./components/Quests";
-import MultiplayerTyping from "./components/MultiplayerTyping";
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import PrivateRoute from './components/auth/PrivateRoute';
+import Signup from './components/auth/Signup';
+import Login from './components/auth/Login';
+import Dashboard from './components/Dashboard';
 
 function App() {
-  const [activePanel, setActivePanel] = useState("todo");
-
-  const handlePanelChange = (panel) => {
-    setActivePanel(panel);
-  };
-
   return (
-    <div className="App">
-      <TopBar onPanelChange={handlePanelChange} />
-      <div className="main-content">
-        {activePanel === "todo" && <TodoList />}
-        {activePanel === "typing" && <SpeedTest />}
-        {activePanel === "multiplayer" && <MultiplayerTyping />}
-        {activePanel === "speedreading" && <SpeedReadingPlus />}
-        {activePanel === "Quests" && <Quests />}
-      </div>
-    </div>
+    <Routes>
+      <Route
+        path="/*"
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/login" element={<Login />} />
+    </Routes>
   );
 }
 

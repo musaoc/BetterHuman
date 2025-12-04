@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import "./TopBar.css";
 
-const TopBar = ({ onPanelChange }) => {
-  const [activePanel, setActivePanel] = useState("todo");
+const TopBar = ({ onToggleStats }) => {
   const [scrolled, setScrolled] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const { currentUser, userProfile, logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,17 +18,20 @@ const TopBar = ({ onPanelChange }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handlePanelChange = (panel) => {
-    setActivePanel(panel);
-    onPanelChange(panel);
-    setShowMobileMenu(false);
-  };
+  async function handleLogout() {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error("Failed to log out", error);
+    }
+  }
 
   const navItems = [
-    { id: 'todo', label: 'To-Do List', icon: '✓' },
-    { id: 'speedreading', label: 'Speed Reader', icon: '📖' },
-    { id: 'typing', label: 'Typing Test', icon: '⌨️' },
-    { id: 'multiplayer', label: 'Multiplayer Race', icon: '🏁' },
+    { id: 'todo', label: 'To-Do List', icon: '✓', path: '/todo' },
+    { id: 'speedreading', label: 'Speed Reader', icon: '📖', path: '/speedreading' },
+    { id: 'typing', label: 'Typing Test', icon: '⌨️', path: '/typing' },
+    { id: 'multiplayer', label: 'Multiplayer Race', icon: '🏁', path: '/multiplayer' },
   ];
 
   return (
@@ -72,70 +78,76 @@ const TopBar = ({ onPanelChange }) => {
         {/* Navigation Links */}
         <nav className={`nav-links ${showMobileMenu ? 'mobile-open' : ''}`}>
           {navItems.map((item) => (
-            <a
+            <Link
               key={item.id}
-              href={`#${item.id}`}
-              className={`nav-link ${activePanel === item.id ? 'active' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                handlePanelChange(item.id);
-              }}
+              to={item.path}
+              className="nav-link"
+              onClick={() => setShowMobileMenu(false)}
             >
               <span className="nav-icon">{item.icon}</span>
               <span className="nav-label">{item.label}</span>
-              {activePanel === item.id && <span className="active-indicator"></span>}
-            </a>
+            </Link>
           ))}
         </nav>
 
         {/* Action Buttons */}
         <div className="button-group">
-          <button
-            onClick={() => handlePanelChange("Quests")}
-            className="button-primary"
-          >
-            <span className="button-icon">🎯</span>
-            <span className="button-text">QUESTS</span>
-            <span className="button-shine"></span>
-          </button>
-          
-          <button className="button-secondary" title="Notifications">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            <span className="notification-badge">3</span>
-          </button>
-
-          <div className="avatar-container">
-            <div
-              className="avatar"
-              style={{
-                backgroundImage:
-                  'url("https://cdn.usegalileo.ai/sdxl10/c3427612-577d-4266-8656-82bc2df05b8b.png")',
-              }}
-            >
-              <span className="status-indicator online"></span>
-            </div>
-            <div className="avatar-dropdown">
-              <div className="dropdown-item">
-                <span>👤</span>
-                <span>Profile</span>
+          {currentUser ? (
+            <>
+              <button 
+                className="button-secondary stats-toggle"
+                onClick={onToggleStats}
+                title="Toggle Stats Panel"
+              >
+                📊
+              </button>
+              <Link to="/quests" className="button-primary">
+                <span className="button-icon">🎯</span>
+                <span className="button-text">QUESTS</span>
+                <span className="button-shine"></span>
+              </Link>
+              <div className="avatar-container">
+                <div
+                  className="avatar"
+                  style={{
+                    backgroundImage:
+                      'url("https://cdn.usegalileo.ai/sdxl10/c3427612-577d-4266-8656-82bc2df05b8b.png")',
+                  }}
+                >
+                  <span className="status-indicator online"></span>
+                </div>
+                <div className="avatar-dropdown">
+                  <div className="dropdown-header">
+                    <span className="dropdown-name">{userProfile?.displayName || currentUser.email?.split('@')[0]}</span>
+                    <span className="dropdown-level">Level {userProfile?.stats?.level || 1}</span>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <div className="dropdown-item">
+                    <span>👤</span>
+                    <span>{currentUser.email}</span>
+                  </div>
+                  <div className="dropdown-item">
+                    <span>🔥</span>
+                    <span>{userProfile?.stats?.streakDays || 0} day streak</span>
+                  </div>
+                  <div className="dropdown-item">
+                    <span>⭐</span>
+                    <span>{userProfile?.stats?.xpPoints || 0} XP</span>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <div className="dropdown-item logout" onClick={handleLogout}>
+                    <span>🚪</span>
+                    <span>Logout</span>
+                  </div>
+                </div>
               </div>
-              <div className="dropdown-item">
-                <span>⚙️</span>
-                <span>Settings</span>
-              </div>
-              <div className="dropdown-item">
-                <span>📊</span>
-                <span>Statistics</span>
-              </div>
-              <div className="dropdown-divider"></div>
-              <div className="dropdown-item logout">
-                <span>🚪</span>
-                <span>Logout</span>
-              </div>
-            </div>
-          </div>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="button-secondary">Login</Link>
+              <Link to="/signup" className="button-primary">Sign Up</Link>
+            </>
+          )}
         </div>
       </div>
     </div>

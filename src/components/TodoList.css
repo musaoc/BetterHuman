@@ -632,3 +632,248 @@
     max-width: 100%;
   }
 }
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 15px 25px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  color: #666;
+}
+
+.tab-button:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.tab-button.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.tab-button span {
+  font-size: 1.2rem;
+}
+
+/* Journal Container */
+.journal-container {
+  display: grid;
+  gap: 30px;
+}
+
+.journal-form {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.journal-prompt {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.prompt-icon {
+  font-size: 2rem;
+}
+
+.journal-prompt p {
+  flex: 1;
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+  font-style: italic;
+}
+
+.refresh-prompt {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.refresh-prompt:hover {
+  opacity: 1;
+  transform: rotate(180deg);
+}
+
+.mood-selector {
+  margin-bottom: 20px;
+}
+
+.mood-label {
+  display: block;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.mood-options {
+  display: flex;
+  gap: 10px;
+}
+
+.mood-button {
+  width: 50px;
+  height: 50px;
+  border: 2px solid #e0e0e0;
+  border-radius: 50%;
+  background: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mood-button:hover {
+  transform: scale(1.1);
+  border-color: #667eea;
+}
+
+.mood-button.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  transform: scale(1.1);
+}
+
+.journal-textarea {
+  width: 100%;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 150px;
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+}
+
+.journal-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.journal-textarea::placeholder {
+  color: #aaa;
+}
+
+.journal-save {
+  width: 100%;
+}
+
+/* Journal Entries */
+.journal-entries {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.journal-entries h3 {
+  margin: 0 0 20px;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.journal-entry-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid #667eea;
+  transition: all 0.3s ease;
+}
+
+.journal-entry-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.entry-mood {
+  font-size: 1.5rem;
+}
+
+.entry-date {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.entry-prompt {
+  font-size: 0.9rem;
+  color: #667eea;
+  font-style: italic;
+  margin: 0 0 10px;
+  padding-left: 10px;
+  border-left: 2px solid #667eea;
+}
+
+.entry-content {
+  margin: 0;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* Journal Responsive */
+@media (max-width: 768px) {
+  .tab-navigation {
+    flex-direction: column;
+  }
+
+  .journal-prompt {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .mood-options {
+    justify-content: center;
+  }
+
+  .mood-button {
+    width: 45px;
+    height: 45px;
+    font-size: 1.3rem;
+  }
+}
